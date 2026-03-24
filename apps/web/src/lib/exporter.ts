@@ -178,8 +178,11 @@ export async function downloadAsZip(
     zipEntries[`${prefix}manifest.json`] = strToU8(buildManifest(chunks, opts, totalChars));
   }
 
-  // Compress with level 1 (fastest) — text compresses well even at level 1
-  const zipped = zipSync(zipEntries, { level: 1 });
+  // Compress with level 1 (fastest) — text compresses well even at level 1.
+  // Cast: fflate returns Uint8Array<ArrayBufferLike> but Blob only accepts
+  // Uint8Array<ArrayBuffer>. At runtime fflate always returns a plain
+  // ArrayBuffer-backed Uint8Array, so this cast is safe.
+  const zipped = zipSync(zipEntries, { level: 1 }) as Uint8Array<ArrayBuffer>;
   const blob = new Blob([zipped], { type: "application/zip" });
 
   // Trigger browser download
