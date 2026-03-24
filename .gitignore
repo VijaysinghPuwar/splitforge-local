@@ -1,61 +1,30 @@
-# Dependencies
-node_modules/
-.pnp
+# dependencies
+/node_modules
+/.pnp
 .pnp.js
 
-# Next.js
-.next/
-out/
-build/
+# testing
+/coverage
 
-# Tauri / Rust
-target/
-src-tauri/target/
-apps/desktop/src-tauri/target/
-*.dmg
-*.msi
-*.AppImage
-*.deb
-*.rpm
+# next.js
+/.next/
+/out/
 
-# Testing
-coverage/
-.nyc_output/
+# production
+/build
 
-# OS
+# misc
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Editor
-.vscode/settings.json
-.idea/
-*.swp
-*.swo
-*~
-
-# Environment
+*.pem
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env*.local
 
-# Logs
+# debug
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
-# TypeScript
+# vercel
+.vercel
+
+# typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Misc
-.vercel
-*.zip
-*.tar.gz
