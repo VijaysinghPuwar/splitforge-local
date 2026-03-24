@@ -13,12 +13,17 @@
  * a clear error if called from a non-Tauri context.
  */
 
+// Extend the global Window interface so TypeScript knows about the Tauri
+// internal marker. This avoids unsafe `as` casts and gives correct typing.
+declare global {
+  interface Window {
+    __TAURI_INTERNALS__?: unknown;
+  }
+}
+
 /** Returns true when the app is running inside the Tauri desktop shell. */
 export function isTauri(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof (window as Record<string, unknown>).__TAURI_INTERNALS__ !== "undefined"
-  );
+  return typeof window !== "undefined" && typeof window.__TAURI_INTERNALS__ !== "undefined";
 }
 
 /** Throw a consistent error for browser-only contexts. */
