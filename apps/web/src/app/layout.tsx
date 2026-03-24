@@ -1,27 +1,23 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+export const viewport: Viewport = { themeColor: "#0c0e14" };
+
 export const metadata: Metadata = {
-  title: "SplitForge Local — Split large text files, locally",
+  title: "SplitForge — Split large text files in your browser",
   description:
-    "A local-first desktop app that splits large text files into numbered .txt chunks. No cloud. No uploads. 100% on your machine.",
-  keywords: ["text splitter", "file splitter", "local app", "tauri", "offline"],
+    "Paste or import text, set a character limit, and export numbered .txt files or a ZIP. All processing runs locally — nothing is uploaded.",
+  keywords: ["text splitter", "file splitter", "browser tool", "local processing", "offline"],
   openGraph: {
-    title: "SplitForge Local",
-    description: "Split large text files into numbered chunks — 100% local, zero cloud.",
+    title: "SplitForge",
+    description: "Split large text into numbered files — runs entirely in your browser.",
     type: "website",
-    siteName: "SplitForge Local",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "SplitForge Local",
-    description: "Split large text files into numbered chunks — 100% local, zero cloud.",
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body>{children}</body>
     </html>
   );
