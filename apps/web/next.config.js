@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // apps/web is fully self-contained — no workspace packages to transpile.
-  // Tauri-specific code lives only in apps/desktop and is never imported here.
+  // Web Workers using `new URL('./workers/...', import.meta.url)` are
+  // bundled automatically by Next.js/webpack — no extra config needed.
+
+  // This app is fully self-contained: no workspace packages, no Tauri.
 };
 
 module.exports = nextConfig;
