@@ -27,7 +27,7 @@ The Next.js layer handles the UI; Tauri handles the OS integration. The two comm
 - **Live character count** and estimated output file count as you type
 - **Native folder picker** for the output directory
 - **Overwrite protection** — overwrite, skip existing, or auto-create a timestamped subfolder
-- **Optional export subfolder** — `splitforge-export-2026-03-23-001/`
+- **Optional export subfolder** — `splitforge-export-2026-03-24-001/`
 - **Optional manifest.json** — records input size, split config, and file list
 - **Chunk preview** — inspect the first 3 chunks before committing to an export
 - **Copy chunk** — copy any preview chunk to the clipboard
@@ -36,27 +36,24 @@ The Next.js layer handles the UI; Tauri handles the OS integration. The two comm
 - **Drag & drop** — drop a `.txt` file onto the text area to import
 - **Unicode-safe** — emoji, CJK, and accented characters each count as 1 character
 - **Progress indicator** with cancellation support for large exports
-- **Dark mode** throughout
 
 ---
 
 ## Project Structure
 
 ```
-splitforge-local/           ← monorepo root
+splitforge-local/               ← monorepo root (npm workspaces)
 ├── apps/
-│   ├── desktop/            ← Tauri + Next.js desktop app
-│   │   ├── src-tauri/      ← Rust backend (file I/O, path security)
-│   │   └── src/            ← Next.js UI
-│   └── web/                ← Next.js landing page (Vercel-deployable)
+│   ├── desktop/                ← Tauri + Next.js desktop app  [NOT on Vercel]
+│   │   ├── src-tauri/          ← Rust backend (file I/O, security)
+│   │   └── src/                ← Next.js UI + Tauri-specific lib/
+│   └── web/                    ← Next.js landing page          [Vercel target]
+│       └── src/app/            ← Self-contained, zero Tauri deps
 ├── packages/
-│   └── core/               ← Shared pure logic (no I/O, no side-effects)
-│       ├── src/
-│       │   ├── textCounter.ts
-│       │   ├── splitter.ts
-│       │   ├── fileNaming.ts
-│       │   └── index.ts
-│       └── __tests__/      ← Unit tests
+│   └── core/                   ← Shared pure logic (no I/O, fully tested)
+│       ├── src/                ← textCounter, splitter, fileNaming
+│       └── __tests__/
+├── vercel.json                 ← Tells Vercel to build apps/web only
 ├── .eslintrc.js
 ├── .prettierrc.json
 ├── .gitignore
@@ -64,11 +61,15 @@ splitforge-local/           ← monorepo root
 └── README.md
 ```
 
-**`packages/core`** contains all text-splitting logic — pure TypeScript, no I/O, fully testable without Tauri.
+### Architecture separation
 
-**`apps/desktop`** is the full Tauri application. The `src/lib/tauri-bridge.ts` isolates all Tauri API calls so the rest of the code stays portable.
+| Layer | Location | Vercel? | Tauri? |
+|-------|----------|---------|--------|
+| Shared logic | `packages/core` | No dependency | No dependency |
+| Desktop UI + FS bridge | `apps/desktop` | ✗ Never | ✓ Required |
+| Landing page | `apps/web` | ✓ Target | ✗ Zero imports |
 
-**`apps/web`** is the public landing page, deployable to Vercel. It imports from `packages/core` for any shared logic but has no Tauri dependency.
+`apps/web` is **fully self-contained** — it has its own `package.json` with all dependencies declared directly and imports nothing from `apps/desktop` or Tauri packages.
 
 ---
 
@@ -79,17 +80,16 @@ splitforge-local/           ← monorepo root
 | Node.js | ≥ 18 | [nodejs.org](https://nodejs.org) |
 | npm | ≥ 9 | bundled with Node |
 | Rust | ≥ 1.77 | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
-| Tauri CLI | v2 | installed as a dev dependency — `npx tauri` |
 
-**macOS only:** Xcode Command Line Tools — `xcode-select --install`
+**macOS only:** `xcode-select --install`
 
-**Windows only:** WebView2 (ships with Windows 11; available via Microsoft Edge installer on Windows 10)
+**Windows only:** WebView2 (ships with Windows 11; install via Microsoft Edge on Windows 10)
 
 ---
 
 ## Local Development
 
-### 1. Install dependencies
+### 1. Install all dependencies
 
 ```bash
 git clone https://github.com/VijaysinghPuwar/splitforge-local.git
@@ -97,44 +97,38 @@ cd splitforge-local
 npm install
 ```
 
-### 2. Run the desktop app (hot-reload)
+### 2. Run the desktop app
 
 ```bash
 npm run tauri:dev
+# Starts Next.js on :3000 + opens the Tauri window
 ```
-
-This starts the Next.js dev server on `http://localhost:3000` and launches the Tauri window pointing at it. Changes to the UI update instantly without restarting Tauri.
 
 ### 3. Run the web landing page
 
 ```bash
 npm run dev:web
-# → http://localhost:3001
+# → http://localhost:3000
 ```
 
-### 4. Run the desktop UI only (no Tauri)
+### 4. Run just the desktop UI in the browser (no Tauri)
 
 ```bash
 npm run dev:desktop
 # → http://localhost:3000
+# File-system features will show errors — they require the Tauri runtime
 ```
-
-File-system features will not work in the browser, but the UI and logic are fully inspectable.
 
 ---
 
-## Running Tests
+## Tests
 
 ```bash
-npm test                      # run all tests
-npm run test:coverage         # with coverage report
+npm test                # run all core tests
+npm run test:coverage   # with coverage report
 ```
 
-Tests live in `packages/core/__tests__/` and cover:
-
-- `textCounter.ts` — Unicode-safe character counting
-- `splitter.ts` — exact and smart split modes, edge cases, large inputs
-- `fileNaming.ts` — file name generation, prefix sanitization, path validation
+Tests live in `packages/core/__tests__/` and cover character counting, exact splits, smart splits, edge cases, and file naming.
 
 ---
 
@@ -144,89 +138,79 @@ Tests live in `packages/core/__tests__/` and cover:
 npm run tauri:build
 ```
 
-Output locations:
+Output:
 
 | Platform | Path |
 |----------|------|
-| macOS `.app` | `apps/desktop/src-tauri/target/release/bundle/macos/` |
 | macOS `.dmg` | `apps/desktop/src-tauri/target/release/bundle/dmg/` |
+| macOS `.app` | `apps/desktop/src-tauri/target/release/bundle/macos/` |
 | Windows `.msi` | `apps/desktop/src-tauri/target/release/bundle/msi/` |
-| Windows `.exe` | `apps/desktop/src-tauri/target/release/bundle/nsis/` |
+| Windows installer | `apps/desktop/src-tauri/target/release/bundle/nsis/` |
 
-> **Note:** macOS code-signing requires an Apple Developer account. Windows signing requires a code-signing certificate. Unsigned builds work fine for local use.
+> Generating icons: `cd apps/desktop && npx tauri icon path/to/icon-1024.png`
 
 ---
 
-## Deploying the Web Layer to Vercel
+## Deploying the Web Landing Page to Vercel
 
-The web landing page (`apps/web`) is a standard Next.js app with no Tauri dependency.
+`apps/web` is a fully self-contained Next.js app with no workspace or Tauri dependencies.
 
-### One-click (Vercel dashboard)
+### Exact Vercel project settings
 
-1. Import the repository at [vercel.com/new](https://vercel.com/new)
-2. Set **Root Directory** to `apps/web`
-3. Framework preset: **Next.js** (auto-detected)
+| Setting | Value |
+|---------|-------|
+| **Root Directory** | `apps/web` |
+| **Framework Preset** | Next.js (auto-detected) |
+| **Build Command** | `next build` (default) |
+| **Install Command** | `npm install` (default) |
+| **Output Directory** | `.next` (default) |
+
+**Step-by-step:**
+1. Go to [vercel.com/new](https://vercel.com/new) → Import Git repository → `VijaysinghPuwar/splitforge-local`
+2. In **Configure Project**, set **Root Directory** to `apps/web`
+3. Leave all other settings at their defaults — Vercel auto-detects Next.js
 4. Deploy
+
+Vercel will install only the dependencies in `apps/web/package.json`. The desktop app and Tauri packages are never touched.
 
 ### Vercel CLI
 
 ```bash
-npm install -g vercel
 cd apps/web
-vercel
+npx vercel          # follow prompts; set project root to apps/web
+npx vercel --prod   # deploy to production
 ```
-
-Or from the repo root:
-
-```bash
-vercel --cwd apps/web
-```
-
-> The desktop binary is **not** hosted on Vercel. Vercel only serves the landing page. Link to GitHub Releases for downloads.
-
----
-
-## Environment Variables
-
-The desktop app requires no environment variables — all configuration is local.
-
-The web app has no required environment variables either. Add `NEXT_PUBLIC_GITHUB_URL` if you want to inject the repo URL at build time.
 
 ---
 
 ## Linting & Formatting
 
 ```bash
-npm run lint            # ESLint
-npm run format          # Prettier (write)
-npm run format:check    # Prettier (check only)
-npm run type-check      # TypeScript
+npm run lint          # ESLint across all workspaces
+npm run format        # Prettier (write)
+npm run format:check  # Prettier (check only)
+npm run type-check    # TypeScript (root tsconfig)
 ```
 
 ---
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit your changes following the commit style below
-4. Open a pull request
-
-### Commit style
+## Commit conventions
 
 ```
 feat: add drag-and-drop file import
 fix: correct off-by-one in smart split boundary search
 chore: update Tauri to 2.1
 docs: add Windows build instructions
-test: add edge cases for Unicode splitting
+test: add Unicode edge cases for splitter
 ```
 
 ---
 
-## Screenshots
+## Contributing
 
-> _Add screenshots here once the app is running._
+1. Fork → feature branch → pull request
+2. Tests must pass: `npm test`
+3. No Tauri imports in `apps/web` or `packages/core`
 
 ---
 
