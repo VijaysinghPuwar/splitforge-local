@@ -1,0 +1,37 @@
+{
+  "name": "splitforge-local",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first desktop app for splitting large text files — built with Next.js + Tauri",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:desktop": "npm run dev --workspace=apps/desktop",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build:desktop": "npm run build --workspace=apps/desktop",
+    "build:web": "npm run build --workspace=apps/web",
+    "tauri:dev": "npm run tauri:dev --workspace=apps/desktop",
+    "tauri:build": "npm run tauri:build --workspace=apps/desktop",
+    "test": "npm run test --workspace=packages/core",
+    "test:coverage": "npm run test:coverage --workspace=packages/core",
+    "lint": "eslint . --ext .ts,.tsx --ignore-path .gitignore",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
